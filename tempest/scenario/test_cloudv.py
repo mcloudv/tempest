@@ -31,10 +31,9 @@ cloudv_group = cfg.OptGroup(name='cloudv',
                             title='Options for cloud validation')
 
 CloudVGroup = [
-#    cfg.StrOpt('image_ref',
-#               help="Valid primary image reference "
-#                    "to use in Cloud Validation tests. "
-#                    "This is a required option"),
+    cfg.StrOpt('image_file',
+               default="/opt/stack/tempest/cloudv.qcow2",
+               help="Path to Cloud Validation image."),
     cfg.StrOpt('flavor_ref',
                default="3",
                help="Valid primary flavor "
@@ -71,7 +70,7 @@ class TestCloudVScenario(manager.ScenarioTest):
         self.servers_client.wait_for_server_status(server_id, status)
 
     def glance_image_create(self):
-        img_path = "/home/ikhudoshyn/glance.qcow2"
+        img_path = CONF.cloudv.image_file
         img_container_format = "bare"
         img_disk_format = "qcow2"
         LOG.debug("paths: img: %s, container_fomat: %s, disk_format: %s " %
