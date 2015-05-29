@@ -13,12 +13,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import six
-import time
 from oslo_config import cfg
 from oslo_log import log as logging
 
-from tempest.common import custom_matchers
 from tempest.common.utils.linux import remote_client
 from tempest import config
 from tempest import exceptions
@@ -60,7 +57,7 @@ LOG = logging.getLogger(__name__)
 
 class TestCloudVScenario(manager.ScenarioTest):
 
-    """ This is a Cloud Validation scenario test.
+    """This is a Cloud Validation scenario test.
     """
 
     def _wait_for_server_status(self, status):
@@ -103,23 +100,13 @@ class TestCloudVScenario(manager.ScenarioTest):
                    '%s' % (secgroup['id'], self.server['id']))
             raise exceptions.TimeoutException(msg)
 
-    def get_remote_client(self, server_or_ip):
+    def get_remote_client(self, ip):
         """Get a SSH client to a remote server
 
         @param server_or_ip a server object as returned by Tempest compute
             client or an IP address to connect to
         @return a RemoteClient object
         """
-        if isinstance(server_or_ip, six.string_types):
-            ip = server_or_ip
-        else:
-            addrs = server_or_ip['addresses'][CONF.compute.network_for_ssh]
-            try:
-                ip = (addr['addr'] for addr in addrs if
-                      netaddr.valid_ipv4(addr['addr'])).next()
-            except StopIteration:
-                raise lib_exc.NotFound("No IPv4 addresses to use for SSH to "
-                                       "remote server.")
 
         username = CONF.cloudv.image_ssh_user
         password = CONF.cloudv.image_ssh_password
