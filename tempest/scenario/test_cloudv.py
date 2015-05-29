@@ -141,7 +141,7 @@ class TestCloudVScenario(manager.ScenarioTest):
         return linux_client
 
     @test.idempotent_id('caa2f074-22f4-4468-b79f-ec2fb8dd49dd')
-    @test.services('cloudv')
+    @test.services('compute', 'image', 'network')
     def test_cloudv_scenario(self):
         self.glance_image_create()
         self.nova_boot()
