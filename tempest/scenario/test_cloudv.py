@@ -109,7 +109,7 @@ class TestCloudVScenario(manager.ScenarioTest):
 
         return linux_client
 
-    @test.idempotent_id('bdbb5441-9204-419d-a225-999999999999')
+    @test.idempotent_id('caa2f074-22f4-4468-b79f-ec2fb8dd49dd')
     @test.services('cloudv')
     def test_cloudv_scenario(self):
         self.glance_image_create()
