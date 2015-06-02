@@ -15,6 +15,7 @@
 
 import six
 import time
+from oslo_config import cfg
 from oslo_log import log as logging
 
 from tempest.common import custom_matchers
@@ -25,6 +26,35 @@ from tempest.scenario import manager
 from tempest import test
 
 CONF = config.CONF
+
+cloudv_group = cfg.OptGroup(name='cloudv',
+                            title='Options for cloud validation')
+
+CloudVGroup = [
+#    cfg.StrOpt('image_ref',
+#               help="Valid primary image reference "
+#                    "to use in Cloud Validation tests. "
+#                    "This is a required option"),
+    cfg.StrOpt('flavor_ref',
+               default="3",
+               help="Valid primary flavor "
+                    "to use in Cloud Validation tests. "),
+    cfg.StrOpt('image_ssh_user',
+               default="mcv",
+               help="User name used to authenticate "
+                    "to a Cloud Validation instance."),
+    cfg.StrOpt('image_ssh_password',
+               default="mcv",
+               help="Password used to authenticate "
+                    "to a Cloud Validation instance."),
+    cfg.IntOpt('ssh_timeout',
+               default=1200,
+               help="Timeout in seconds to wait for authentication to "
+                    "succeed.")
+
+]
+
+config.register_opt_group(CONF, cloudv_group, CloudVGroup)
 
 LOG = logging.getLogger(__name__)
 
@@ -53,7 +83,8 @@ class TestCloudVScenario(manager.ScenarioTest):
         LOG.debug("image:%s" % self.image)
 
     def nova_boot(self):
-        self.server = self.create_server(image=self.image, flavor=3)
+        self.server = self.create_server(image=self.image,
+                                         flavor=CONF.cloudv.flavor_ref)
 
     def create_and_add_security_group(self):
         secgroup = self._create_security_group()
@@ -73,13 +104,11 @@ class TestCloudVScenario(manager.ScenarioTest):
                    '%s' % (secgroup['id'], self.server['id']))
             raise exceptions.TimeoutException(msg)
 
-    def get_remote_client(self, server_or_ip, username=None, password=None):
+    def get_remote_client(self, server_or_ip):
         """Get a SSH client to a remote server
 
         @param server_or_ip a server object as returned by Tempest compute
             client or an IP address to connect to
-        @param username name of the Linux account on the remote server
-        @param password password for the Linux account on the remote server
         @return a RemoteClient object
         """
         if isinstance(server_or_ip, six.string_types):
@@ -93,11 +122,13 @@ class TestCloudVScenario(manager.ScenarioTest):
                 raise lib_exc.NotFound("No IPv4 addresses to use for SSH to "
                                        "remote server.")
 
+        username = CONF.cloudv.image_ssh_user
+        password = CONF.cloudv.image_ssh_password
         linux_client = remote_client.RemoteClient(ip, username,
                                                   password=password)
         # default timeout is set via CONF.compute.ssh_timeout
         # we override it here since we expect lenghtier operations
-        linux_client.ssh_client.timeout = 1200
+        linux_client.ssh_client.timeout = CONF.cloudv.ssh_timeout
 
         try:
             linux_client.validate_authentication()
@@ -118,6 +149,4 @@ class TestCloudVScenario(manager.ScenarioTest):
         self.floating_ip = self.create_floating_ip(self.server)
         self.create_and_add_security_group()
 
-        self.linux_client = self.get_remote_client(self.floating_ip['ip'],
-                                                   username="mcv",
-                                                   password="mcv")
+        self.linux_client = self.get_remote_client(self.floating_ip['ip'])
