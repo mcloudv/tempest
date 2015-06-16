@@ -22,6 +22,9 @@ from tempest import exceptions
 from tempest.scenario import manager
 from tempest import test
 
+import time
+
+
 CONF = config.CONF
 
 cloudv_group = cfg.OptGroup(name='cloudv',
@@ -44,7 +47,7 @@ CloudVGroup = [
                help="Password used to authenticate "
                     "to a Cloud Validation instance."),
     cfg.IntOpt('ssh_timeout',
-               default=1200,
+               default=1800,
                help="Timeout in seconds to wait for authentication to "
                     "succeed.")
 
@@ -134,5 +137,23 @@ class TestCloudVScenario(manager.ScenarioTest):
 
         self.floating_ip = self.create_floating_ip(self.server)
         self.create_and_add_security_group()
-
         self.linux_client = self.get_remote_client(self.floating_ip['ip'])
+
+        total_timeout = 0
+        attempt = 0
+
+        while total_timeout < 3600:
+            try:
+                time.sleep(60)
+                LOG.debug("Checking if docker images are ready")
+                self.linux_client.exec_command(
+                    "test -e /etc/mcv/docker.initialized")
+                return
+            except Exception:
+                total_timeout += 60
+                attempt += 1
+                LOG.debug(
+                    "Attempt %d failed, time elapsed %d" % (
+                        attempt, total_timeout))
+
+        self.fail("Failed to check existence of /etc/mcv/docker.initialize")
